@@ -51,6 +51,37 @@ yprad_relative = 100 * yprad ./ ypmid  # относительная величина неопределенности
 %hold on
 %ir_scatter(irp_steam,'bo')
 %ir_scatter(ir_problem(Xp,ypmid,yprad),'r.')
-%xlabel('Fuel consumtion')
-%ylabel('Steam quantity')
 %title('Set of models compatible with data and constraints')
+
+yp = ir_predict(irp_steam , X)
+result = []
+yprad = []
+x_result = []
+
+for i = 2:9
+  if yp(i, 2) - yp(i, 1) < yp(i - 1, 2) - yp(i - 1, 1)
+    if yp(i, 2) - yp(i, 1) < yp(i + 1, 2) - yp(i + 1, 1),
+      result(end + 1, 1) = (yp(i, 2) + yp(i, 1)) / 2
+      result(end, 2) = (yp(i, 2) - yp(i, 1)) / 2
+      x_result(end + 1, 1) = X(i, 1)
+      x_result(end, 2) = X(i, 2)
+    endif
+  endif
+  if yp(i, 2) - yp(i, 1) > yp(i - 1, 2) - yp(i - 1, 1)
+    if yp(i, 2) - yp(i, 1) > yp(i + 1, 2) - yp(i + 1, 1),
+      result(end + 1, 1) = (yp(i, 2) + yp(i, 1)) / 2
+      result(end, 2) = (yp(i, 2) - yp(i, 1)) / 2
+      x_result(end + 1, 1) = X(i, 1)
+      x_result(end, 2) = X(i, 2)
+    endif
+  endif
+endfor
+
+ypmid = mean(result,2);
+irp_steam1 = ir_problem(x_result, result(:, 1), result(:, 2), lb); 
+
+ir_plotmodelset(irp_steam,[0, 11])
+grid on
+hold on
+ir_scatter(irp_steam1,'bo')
+ir_scatter(ir_problem(x_result,ypmid,yprad),'r.')
